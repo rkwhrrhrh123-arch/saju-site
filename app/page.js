@@ -15,6 +15,25 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [res, setRes] = useState(null);
+  const [story, setStory] = useState("");
+  const [code, setCode] = useState("");
+  const [report, setReport] = useState("");
+  const [rLoading, setRLoading] = useState(false);
+  const [rError, setRError] = useState("");
+
+  async function makeReport() {
+    setRLoading(true); setRError(""); setReport("");
+    try {
+      const r = await fetch("/api/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, name, gender, story, code, date, time: noTime ? "" : time, calendar }),
+      });
+      const data = await r.json();
+      if (!r.ok) setRError(data.error); else setReport(data.text);
+    } catch { setRError("연결에 실패했어요. 잠시 후 다시 시도해주세요."); }
+    setRLoading(false);
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -86,7 +105,16 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div className="lock">“{topic}” 상세 리포트는 다음 단계에서 연결됩니다. (결제 + AI 풀이)</div>
+          <div className="lock">
+            <b style={{ color: "var(--ink)" }}>“{topic}” 상세 리포트</b>
+            <label htmlFor="s" style={{ marginTop: 12 }}>사연 (선택)</label>
+            <textarea id="s" rows={4} maxLength={800} value={story} onChange={(e) => setStory(e.target.value)} placeholder="지금 가장 고민되는 상황을 적어주세요." />
+            <label htmlFor="k">테스트 코드 (결제 연결 전 임시)</label>
+            <input id="k" type="password" value={code} onChange={(e) => setCode(e.target.value)} />
+            <button type="button" className="go" onClick={makeReport} disabled={rLoading || !code}>{rLoading ? "리포트 작성 중… (30~60초)" : "AI 상세 리포트 만들기"}</button>
+            {rError && <p className="err" role="alert">{rError}</p>}
+          </div>
+          {report && <div className="report">{report}</div>}
         </section>
       )}
       <p className="note">본 콘텐츠는 오락·참고용이며 중요한 결정의 책임은 본인에게 있습니다.</p>
